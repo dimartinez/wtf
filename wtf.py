@@ -109,25 +109,45 @@ def show_problem(problem):
     print("\n")
 
 
+def select_cause_option(filename, data):
+    options = {
+        "1": lambda: new_cause(filename, data),
+        "2": lambda: delete_cause(filename, data),
+        "3": lambda: edit_cause(filename, data),
+        "4": lambda: None  # Regresar al menú principal
+    }
+
+    while True:
+        option = prompt(
+            "Submenú de causa:\n 1. Nueva causa\n 2. Eliminar causa\n 3. Editar causa\n 4. Regresar al menú principal\n Ingrese una opción: ").strip()
+
+        if option in options:
+            options[option]()
+            if option == "4":
+                break
+        else:
+            print("Error: opción inválida.")
+
+
 def select_option(filename, data):
     options = {
         "1": lambda: edit_problem(filename, data),
         "2": lambda: exit_program(),
-        "3": lambda: new_cause(filename, data) if "problem" in data else print("Error: No hay un problema cargado en el archivo."),
-        "4": lambda: delete_cause(filename, data) if "problem" in data else print("Error: No hay un problema cargado en el archivo.")
+        "3": lambda: select_cause_option(filename, data) if "problem" in data else print("Error: No hay un problema cargado en el archivo.")
     }
 
     while True:
         if "problem" in data:
             option = prompt(
-                "Menú de opciones:\n 1. Editar problema\n 2. Salir\n 3. Nueva causa\n 4. Eliminar causa\n Ingrese una opción: ").strip()
+                "Menú de opciones:\n 1. Editar problema\n 2. Salir\n 3. Operaciones de causa\n Ingrese una opción: ").strip()
         else:
             option = prompt(
                 "Menú de opciones:\n 1. Cargar problema\n 2. Salir\n Ingrese una opción: ").strip()
 
         if option in options:
             options[option]()
-            break
+            if option != "3":  # No romper el bucle si se selecciona el submenú de causa
+                break
         else:
             print("Error: opción inválida.")
 
@@ -253,6 +273,33 @@ def new_cause(filename, data):
     # Mostrar un mensaje de confirmación
     print(
         f"La causa '{cause_name}' ha sido agregada al problema con identificador {new_id}.")
+
+
+def edit_cause(filename, data):
+    cause_id_str = prompt("Ingrese el id de la causa a editar: ").strip()
+
+    try:
+        cause_id = int(cause_id_str)
+    except ValueError:
+        print(
+            f"Error: el valor '{cause_id_str}' no es un número entero válido.")
+        return
+
+    cause = look_up_problem_or_cause_by_id(cause_id, data)
+
+    if cause is None:
+        print(f"No existe causa con id {cause_id}.")
+        return
+
+    new_name = prompt(
+        f"Ingrese el nuevo nombre de la causa ({cause['name']}): ").strip()
+    new_description = prompt(
+        f"Ingrese la nueva descripción de la causa ({cause['description']}): ").strip()
+
+    cause["name"] = new_name.strip() or cause["name"]
+    cause["description"] = new_description.strip() or cause["description"]
+
+    save_data_to_file(data, filename)
 
 
 def edit_problem(filename, data):
