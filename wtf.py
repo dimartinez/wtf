@@ -4,6 +4,10 @@ import sys
 from prompt_toolkit import prompt
 from anytree import Node, RenderTree, ContRoundStyle, PreOrderIter
 from queue import Queue
+from colorama import init, Fore, Back, Style
+
+# Inicializar colorama
+init()
 
 FILE_EXTENSION = ".wtf"
 
@@ -87,7 +91,7 @@ def show_problem(problem):
     print("\n")
 
     root = Node(
-        f"({problem['id']}) {problem['name']}: {problem['description']}", id=problem['id'])
+        f"{Back.RED}{Style.BRIGHT}({problem['id']}){Style.RESET_ALL} {problem['name']}: {problem['description']}", id=problem['id'])
 
     queue = Queue()
     if "causes" in problem:
@@ -96,8 +100,15 @@ def show_problem(problem):
 
     while not queue.empty():
         cause, parent = queue.get()
-        node = Node(
-            f"({cause['id']}) {cause['name']}: {cause['description']}", id=cause['id'], parent=parent)
+
+        node = None
+
+        if cause["causes"]:
+            node = Node(
+                f"{Style.NORMAL}{Back.YELLOW}{Fore.BLACK}({cause['id']}){Style.RESET_ALL} {cause['name']}: {cause['description']}", id=cause['id'], parent=parent)
+        else:
+            node = Node(
+                f"{Back.GREEN}{Fore.BLACK}{Style.BRIGHT}({cause['id']}){Style.RESET_ALL} {cause['name']}: {cause['description']}", id=cause['id'], parent=parent)
 
         if "causes" in cause:
             for sub_cause in cause["causes"]:
