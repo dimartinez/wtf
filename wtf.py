@@ -118,6 +118,8 @@ def select_cause_option(filename, data):
     }
 
     while True:
+        show_problem(data["problem"])
+
         option = prompt(
             "Submenú de causa:\n 1. Nueva causa\n 2. Eliminar causa\n 3. Editar causa\n 4. Regresar al menú principal\n Ingrese una opción: ").strip()
 
@@ -132,21 +134,23 @@ def select_cause_option(filename, data):
 def select_option(filename, data):
     options = {
         "1": lambda: edit_problem(filename, data),
-        "2": lambda: exit_program(),
-        "3": lambda: select_cause_option(filename, data) if "problem" in data else print("Error: No hay un problema cargado en el archivo.")
+        "2": lambda: select_cause_option(filename, data) if "problem" in data else print("Error: No hay un problema cargado en el archivo."),
+        "3": lambda: exit_program()
     }
 
     while True:
+        show_problem(data["problem"])
+
         if "problem" in data:
             option = prompt(
-                "Menú de opciones:\n 1. Editar problema\n 2. Salir\n 3. Operaciones de causa\n Ingrese una opción: ").strip()
+                "Menú de opciones:\n 1. Editar problema\n 2. Submenú de causas\n 3. Salir del programa\n Ingrese una opción: ").strip()
         else:
             option = prompt(
                 "Menú de opciones:\n 1. Cargar problema\n 2. Salir\n Ingrese una opción: ").strip()
 
         if option in options:
             options[option]()
-            if option != "3":  # No romper el bucle si se selecciona el submenú de causa
+            if option != "2":  # No romper el bucle si se selecciona el submenú de causa
                 break
         else:
             print("Error: opción inválida.")
@@ -345,7 +349,6 @@ def main():
     data = create_or_load_file(filename)
 
     while True:
-        show_problem(data["problem"])
         select_option(filename, data)
 
 
