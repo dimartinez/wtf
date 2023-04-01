@@ -12,6 +12,20 @@ init()
 FILE_EXTENSION = ".wtf"
 
 
+def print_gangster_cat():
+    gangster_cat_and_tree = r"""
+  /\_/\         A
+ / o o \       / \
+(   "   )     B---C
+  > ^ <      /     \
+            D       E
+
+Editor de árboles de problemas.
+"""
+    for line in gangster_cat_and_tree.split('\n'):
+        print(Fore.GREEN + line + Style.RESET_ALL)
+
+
 def create_or_load_file(filename):
 
     if not os.path.isfile(filename):
@@ -402,6 +416,8 @@ def main():
         return
 
     data = create_or_load_file(filename)
+
+    print_gangster_cat()
 
     while True:
         select_option(filename, data)
