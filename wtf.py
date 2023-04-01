@@ -39,13 +39,23 @@ def create_or_load_file(filename):
     return data
 
 
-def look_up_problem_or_cause_by_id(id, data):
+def look_up_problem_or_cause_by_id(id, data, search_from_cause=False):
     # Verificar que data sea un diccionario
     if not isinstance(data, dict):
         return None
 
     # Lista de elementos a explorar
-    elementos_por_explorar = [data["problem"]]
+    elementos_por_explorar = []
+
+    # Verificar si "problem" está presente en la estructura de datos y si se debe buscar a partir del problema
+    if not search_from_cause and "problem" in data:
+        elementos_por_explorar.append(data["problem"])
+    # Si se debe buscar a partir de una causa, agregar las causas de la causa dada
+    elif search_from_cause and "causes" in data:
+        elementos_por_explorar.extend(data["causes"])
+    else:
+        print(f"{Back.RED}{Style.BRIGHT}Error: No hay un problema o causa cargada en la estructura de datos.{Style.RESET_ALL}")
+        return None
 
     # Ciclo de exploración
     while elementos_por_explorar:
@@ -186,7 +196,8 @@ def delete_cause(filename, data):
 
     # Verificar si el ID corresponde al problema raíz
     if cause_id == data["problem"]["id"]:
-        print("Error: no se puede eliminar el problema raíz.")
+        print(
+            f"{Back.RED}{Style.BRIGHT}Error: no se puede eliminar el problema raíz.{Style.RESET_ALL}")
         return
 
     # Buscar la causa a eliminar en la estructura de datos
@@ -232,7 +243,7 @@ def get_last_id(data):
 def new_cause(filename, data):
     # Validar que la estructura de datos contenga un problema
     if "problem" not in data:
-        print("Error: no se puede agregar una causa ya que no hay un problema cargado en el archivo.")
+        print(f"{Back.RED}{Style.BRIGHT}Error: no se puede agregar una causa ya que no hay un problema cargado en el archivo.{Style.RESET_ALL}")
         return
 
     # Solicitar nombre y descripción de la nueva causa
@@ -313,6 +324,39 @@ def edit_cause(filename, data):
 
     cause["name"] = new_name.strip() or cause["name"]
     cause["description"] = new_description.strip() or cause["description"]
+
+    new_parent_id_str = prompt(
+        f"Ingrese el nuevo id del padre (actual: {cause['parent_id']}): ").strip()
+
+    try:
+        new_parent_id = int(
+            new_parent_id_str) if new_parent_id_str else cause["parent_id"]
+    except ValueError:
+        print(
+            f"Error: el valor '{new_parent_id_str}' no es un número entero válido.")
+        return
+
+    if new_parent_id != cause["parent_id"]:
+        if look_up_problem_or_cause_by_id(new_parent_id, data) is None:
+            print(
+                f"{Back.RED}{Style.BRIGHT}No existe causa o problema con id {new_parent_id}.{Style.RESET_ALL}")
+            return
+
+        # Validar que la causa no se conecte a una causa hija para evitar loops
+        if look_up_problem_or_cause_by_id(new_parent_id, cause, search_from_cause=True) is not None:
+            print(
+                f"{Back.RED}{Style.BRIGHT}Error: no se puede conectar una causa a una de sus causas hijas.{Style.RESET_ALL}")
+            return
+
+        # Eliminar la causa del padre anterior
+        old_parent = look_up_problem_or_cause_by_id(cause["parent_id"], data)
+        old_parent["causes"] = [
+            c for c in old_parent["causes"] if c["id"] != cause_id]
+
+        # Asignar la causa al nuevo padre
+        cause["parent_id"] = new_parent_id
+        new_parent = look_up_problem_or_cause_by_id(new_parent_id, data)
+        new_parent["causes"].append(cause)
 
     save_data_to_file(data, filename)
 
