@@ -1,3 +1,6 @@
+from networkx.drawing.nx_agraph import graphviz_layout
+import matplotlib.pyplot as plt
+import networkx as nx
 import json
 import os
 import sys
@@ -5,6 +8,8 @@ from prompt_toolkit import prompt
 from anytree import Node, RenderTree, ContRoundStyle, PreOrderIter
 from queue import Queue
 from colorama import init, Fore, Back, Style
+from matplotlib import pyplot as plt
+
 
 # Inicializar colorama
 init()
@@ -170,7 +175,8 @@ def select_option(filename, data):
     options = {
         "1": lambda: edit_problem(filename, data),
         "2": lambda: select_cause_option(filename, data) if "problem" in data else print("Error: No hay un problema cargado en el archivo."),
-        "3": lambda: exit_program()
+        "3": lambda: draw_tree(data) if "problem" in data else print("Error: No hay un problema cargado en el archivo."),
+        "4": lambda: exit_program()
     }
 
     while True:
@@ -178,7 +184,7 @@ def select_option(filename, data):
 
         if "problem" in data:
             option = prompt(
-                "Menú de opciones:\n 1. Editar problema\n 2. Submenú de causas\n 3. Salir del programa\n Ingrese una opción: ").strip()
+                "Menú de opciones:\n 1. Editar problema\n 2. Submenú de causas\n 3. Dibujar árbol de problema\n 4. Salir del programa\n Ingrese una opción: ").strip()
         else:
             option = prompt(
                 "Menú de opciones:\n 1. Cargar problema\n 2. Salir\n Ingrese una opción: ").strip()
@@ -189,6 +195,89 @@ def select_option(filename, data):
                 break
         else:
             print("Error: opción inválida.")
+
+
+def draw_tree(data):
+    # Crear un grafo dirigido usando la librería networkx
+    G = nx.DiGraph()
+
+    def add_causes_to_graph(parent_id, causes):
+        # Agregar los nodos y aristas correspondientes para cada causa
+        for cause in causes:
+            cause_id = cause["id"]
+            cause_name = cause["name"]
+            # Agregar atributo 'name' al nodo
+            G.add_node(cause_id, name=cause_name)
+            G.add_edge(parent_id, cause_id)
+            # Si la causa tiene causas anidadas, llamar a la función recursivamente
+            if "causes" in cause:
+                add_causes_to_graph(cause_id, cause["causes"])
+
+    # Agregar los nodos y aristas correspondientes para el problema principal
+    problem_id = data["problem"]["id"]
+    problem_name = data["problem"]["name"]
+    # Agregar atributo 'name' al nodo del problema principal
+    G.add_node(problem_id, name=problem_name)
+    add_causes_to_graph(problem_id, data["problem"]["causes"])
+
+    # Definir los parámetros de visualización del grafo
+    graph_attrs = {
+        "fontname": "Arial",
+        "fontsize": "14",
+        "bgcolor": "white",
+    }
+    node_attrs = {
+        "fontname": "Arial",
+        "fontsize": "12",
+        "shape": "box",
+        "style": "rounded",
+        "fillcolor": "#e0e0e0",
+        "color": "#404040",
+        "penwidth": "2",
+    }
+    edge_attrs = {
+        "color": "#404040",
+        "arrowhead": "open",
+        "arrowsize": "1.5",
+        "penwidth": "1.5",
+    }
+
+    # Crear el gráfico usando la librería graphviz
+    graph = nx.nx_agraph.to_agraph(G)
+    graph.graph_attr.update(graph_attrs)
+    graph.node_attr.update(node_attrs)
+    graph.edge_attr.update(edge_attrs)
+
+    # Especificar el layout del grafo
+    pos = graphviz_layout(G, prog='dot')
+
+    # Obtener los nodos del grafo y asignar el color rojo al nodo raíz
+    nodes = list(G.nodes())
+    node_colors = [node_attrs["fillcolor"]] * len(nodes)
+    node_colors[nodes.index(problem_id)] = "red"
+
+    # Recorrer recursivamente el grafo y asignar el color amarillo a los nodos correspondientes a causas
+    def colorize_causes(node_id):
+        nonlocal node_colors
+        if node_id == problem_id:
+            return
+        node_colors[nodes.index(node_id)] = "yellow"
+        if G.out_degree(node_id) == 0:
+            node_colors[nodes.index(node_id)] = "green"
+        for successor in G.successors(node_id):
+            colorize_causes(successor)
+
+    for cause in data["problem"]["causes"]:
+        cause_id = cause["id"]
+        colorize_causes(cause_id)
+
+    # Mostrar el gráfico usando matplotlib
+    fig, ax = plt.subplots(figsize=(8, 8))
+    plt.axis("off")
+    plt.title("Árbol de problemas")
+    nx.draw(G, pos=pos, with_labels=True, node_color=node_colors,
+            edge_color=edge_attrs["color"], labels=nx.get_node_attributes(G, 'name'), ax=ax)
+    plt.show()
 
 
 def delete_cause(filename, data):
