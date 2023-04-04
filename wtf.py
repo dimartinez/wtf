@@ -8,13 +8,17 @@ from prompt_toolkit import prompt
 from anytree import Node, RenderTree, ContRoundStyle, PreOrderIter
 from queue import Queue
 from colorama import init, Fore, Back, Style
+import textwrap
 from matplotlib import pyplot as plt
+import matplotlib
+matplotlib.use('Qt5Agg')
 
 
 # Inicializar colorama
 init()
 
 FILE_EXTENSION = ".wtf"
+LINE_WRAP_WIDTH = 15
 
 
 def print_gangster_cat():
@@ -205,8 +209,8 @@ def draw_tree(data):
         # Agregar los nodos y aristas correspondientes para cada causa
         for cause in causes:
             cause_id = cause["id"]
-            cause_name = cause["name"]
-            # Agregar atributo 'name' al nodo
+            cause_name = "\n".join(textwrap.wrap(
+                cause["name"], width=LINE_WRAP_WIDTH))
             G.add_node(cause_id, name=cause_name)
             G.add_edge(parent_id, cause_id)
             # Si la causa tiene causas anidadas, llamar a la función recursivamente
@@ -214,69 +218,40 @@ def draw_tree(data):
                 add_causes_to_graph(cause_id, cause["causes"])
 
     # Agregar los nodos y aristas correspondientes para el problema principal
-    problem_id = data["problem"]["id"]
-    problem_name = data["problem"]["name"]
-    # Agregar atributo 'name' al nodo del problema principal
+    problem = data["problem"]
+    problem_id = problem["id"]
+    problem_name = "\n".join(textwrap.wrap(
+        problem["name"], width=LINE_WRAP_WIDTH))
     G.add_node(problem_id, name=problem_name)
-    add_causes_to_graph(problem_id, data["problem"]["causes"])
-
-    # Definir los parámetros de visualización del grafo
-    graph_attrs = {
-        "fontname": "Arial",
-        "fontsize": "14",
-        "bgcolor": "white",
-    }
-    node_attrs = {
-        "fontname": "Arial",
-        "fontsize": "12",
-        "shape": "box",
-        "style": "rounded",
-        "fillcolor": "#e0e0e0",
-        "color": "#404040",
-        "penwidth": "2",
-    }
-    edge_attrs = {
-        "color": "#404040",
-        "arrowhead": "open",
-        "arrowsize": "1.5",
-        "penwidth": "1.5",
-    }
-
-    # Crear el gráfico usando la librería graphviz
-    graph = nx.nx_agraph.to_agraph(G)
-    graph.graph_attr.update(graph_attrs)
-    graph.node_attr.update(node_attrs)
-    graph.edge_attr.update(edge_attrs)
+    add_causes_to_graph(problem_id, problem["causes"])
 
     # Especificar el layout del grafo
     pos = graphviz_layout(G, prog='dot')
 
-    # Obtener los nodos del grafo y asignar el color rojo al nodo raíz
-    nodes = list(G.nodes())
-    node_colors = [node_attrs["fillcolor"]] * len(nodes)
-    node_colors[nodes.index(problem_id)] = "red"
+    # Asignar colores a los nodos del grafo
+    node_colors = ["#e0e0e0"] * len(G.nodes())
+    node_colors[list(G.nodes()).index(problem_id)] = "red"
 
-    # Recorrer recursivamente el grafo y asignar el color amarillo a los nodos correspondientes a causas
     def colorize_causes(node_id):
         nonlocal node_colors
         if node_id == problem_id:
             return
-        node_colors[nodes.index(node_id)] = "yellow"
+        node_colors[list(G.nodes()).index(node_id)] = "yellow"
         if G.out_degree(node_id) == 0:
-            node_colors[nodes.index(node_id)] = "green"
+            node_colors[list(G.nodes()).index(node_id)] = "green"
         for successor in G.successors(node_id):
             colorize_causes(successor)
 
-    for cause in data["problem"]["causes"]:
-        cause_id = cause["id"]
-        colorize_causes(cause_id)
+    for cause in problem["causes"]:
+        colorize_causes(cause["id"])
 
     # Mostrar el gráfico usando matplotlib
-    fig, ax = plt.subplots(figsize=(8, 8))
+    fig, ax = plt.subplots(figsize=(16, 16))
     plt.axis("off")
-    plt.title("Árbol de problemas")
+    plt.title("ÁRBOL DE PROBLEMAS")
     nx.draw(G, pos=pos, with_labels=True, node_color=node_colors,
-            edge_color=edge_attrs["color"], labels=nx.get_node_attributes(G, 'name'), ax=ax)
+            edge_color="black", labels=nx.get_node_attributes(G, 'name'),
+            node_shape="o", node_size=2400, font_weight="bold", ax=ax)
     plt.show()
 
 
