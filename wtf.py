@@ -123,8 +123,9 @@ def prompt_new_description(problem):
 def show_problem(problem):
     print("\n")
 
+    separator = ": " if problem["description"] else ""
     root = Node(
-        f"{Back.RED}{Style.BRIGHT}({problem['id']}){Style.RESET_ALL} {problem['name']}: {problem['description']}", id=problem['id'])
+        f"{Back.RED}{Style.BRIGHT}({problem['id']}){Style.RESET_ALL} {problem['name']}{separator}{problem['description']}", id=problem['id'])
 
     queue = Queue()
     if "causes" in problem:
@@ -135,13 +136,14 @@ def show_problem(problem):
         cause, parent = queue.get()
 
         node = None
+        separator = ": " if cause["description"] else ""
 
         if cause["causes"]:
             node = Node(
-                f"{Style.NORMAL}{Back.YELLOW}{Fore.BLACK}({cause['id']}){Style.RESET_ALL} {cause['name']}: {cause['description']}", id=cause['id'], parent=parent)
+                f"{Style.NORMAL}{Back.YELLOW}{Fore.BLACK}({cause['id']}){Style.RESET_ALL} {cause['name']}{separator}{cause['description']}", id=cause['id'], parent=parent)
         else:
             node = Node(
-                f"{Back.GREEN}{Fore.BLACK}{Style.BRIGHT}({cause['id']}){Style.RESET_ALL} {cause['name']}: {cause['description']}", id=cause['id'], parent=parent)
+                f"{Back.GREEN}{Fore.BLACK}{Style.BRIGHT}({cause['id']}){Style.RESET_ALL} {cause['name']}{separator}{cause['description']}", id=cause['id'], parent=parent)
 
         if "causes" in cause:
             for sub_cause in cause["causes"]:
