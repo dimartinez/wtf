@@ -228,7 +228,7 @@ def draw_tree(data):
     add_causes_to_graph(problem_id, problem["causes"])
 
     # Especificar el layout del grafo
-    pos = graphviz_layout(G, prog='dot')
+    pos = graphviz_layout(G, prog='twopi')
 
     # Asignar colores a los nodos del grafo
     node_colors = ["#e0e0e0"] * len(G.nodes())
@@ -248,12 +248,13 @@ def draw_tree(data):
         colorize_causes(cause["id"])
 
     # Mostrar el gráfico usando matplotlib
-    fig, ax = plt.subplots(figsize=(16, 16))
+    fig, ax = plt.subplots(figsize=(25, 25))
     plt.axis("off")
     plt.title("ÁRBOL DE PROBLEMAS")
     nx.draw(G, pos=pos, with_labels=True, node_color=node_colors,
             edge_color="black", labels=nx.get_node_attributes(G, 'name'),
-            node_shape="o", node_size=2400, font_weight="bold", ax=ax)
+            node_shape="o", node_size=3000, font_weight="normal", ax=ax)
+    plt.savefig("arbol_de_problemas.png", dpi=100, bbox_inches="tight")
     plt.show()
 
 
