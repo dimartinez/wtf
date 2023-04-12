@@ -254,7 +254,20 @@ def draw_tree(data):
     nx.draw(G, pos=pos, with_labels=True, node_color=node_colors,
             edge_color="black", labels=nx.get_node_attributes(G, 'name'),
             node_shape="o", node_size=3000, font_weight="normal", ax=ax)
-    plt.savefig("arbol_de_problemas.png", dpi=100, bbox_inches="tight")
+
+    # Guardar la imagen en la memoria
+    from io import BytesIO
+    image_data = BytesIO()
+    plt.savefig(image_data, dpi=100, bbox_inches="tight")
+
+    def save_image(event):
+
+        if event.button == 1:  # Botón trackpad
+            with open("arbol_de_problemas.png", "wb") as f:
+                f.write(image_data.getvalue())
+            print("Imagen guardada como 'arbol_de_problemas.png'")
+
+    cid = fig.canvas.mpl_connect('button_press_event', save_image)
     plt.show()
 
 
