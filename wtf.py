@@ -1,3 +1,4 @@
+from PyQt5.QtWidgets import QApplication, QFileDialog
 from networkx.drawing.nx_agraph import graphviz_layout
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -16,6 +17,7 @@ import matplotlib.widgets as mwidgets
 import matplotlib
 matplotlib.use('Qt5Agg')
 
+app = QApplication([])
 
 # Inicializar colorama
 init()
@@ -264,9 +266,16 @@ def draw_tree(data):
     plt.savefig(image_data, dpi=100, bbox_inches="tight")
 
     def save_image(event):
-        with open("arbol_de_problemas.png", "wb") as f:
-            f.write(image_data.getvalue())
-        print("Imagen guardada como 'arbol_de_problemas.png'")
+        file_name, _ = QFileDialog.getSaveFileName(
+            None, "Guardar imagen", "", "Imágenes PNG (*.png);;Todos los archivos (*)"
+        )
+
+        if file_name:
+            if not file_name.endswith(".png"):
+                file_name += ".png"
+            with open(file_name, "wb") as f:
+                f.write(image_data.getvalue())
+            print(f"Imagen guardada como '{file_name}'")
 
     # Crear y mostrar el botón de exportar
     ax_button = plt.axes([0.8, 0.01, 0.1, 0.05])  # Posición y tamaño del botón
