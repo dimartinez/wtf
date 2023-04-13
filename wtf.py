@@ -10,6 +10,9 @@ from queue import Queue
 from colorama import init, Fore, Back, Style
 import textwrap
 from matplotlib import pyplot as plt
+import ipywidgets as widgets
+from IPython.display import display
+import matplotlib.widgets as mwidgets
 import matplotlib
 matplotlib.use('Qt5Agg')
 
@@ -261,13 +264,15 @@ def draw_tree(data):
     plt.savefig(image_data, dpi=100, bbox_inches="tight")
 
     def save_image(event):
+        with open("arbol_de_problemas.png", "wb") as f:
+            f.write(image_data.getvalue())
+        print("Imagen guardada como 'arbol_de_problemas.png'")
 
-        if event.button == 1:  # Botón trackpad
-            with open("arbol_de_problemas.png", "wb") as f:
-                f.write(image_data.getvalue())
-            print("Imagen guardada como 'arbol_de_problemas.png'")
+    # Crear y mostrar el botón de exportar
+    ax_button = plt.axes([0.8, 0.01, 0.1, 0.05])  # Posición y tamaño del botón
+    export_button = mwidgets.Button(ax_button, "Exportar imagen")
+    export_button.on_clicked(save_image)
 
-    cid = fig.canvas.mpl_connect('button_press_event', save_image)
     plt.show()
 
 
