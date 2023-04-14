@@ -1,3 +1,4 @@
+import copy
 from PyQt5.QtWidgets import QApplication, QFileDialog
 from networkx.drawing.nx_agraph import graphviz_layout
 import matplotlib.pyplot as plt
@@ -410,6 +411,7 @@ def new_cause(filename, data):
 
 
 def edit_cause(filename, data):
+    data_copy = copy.deepcopy(data)
     cause_id_str = prompt("Ingrese el id de la causa a editar: ").strip()
 
     try:
@@ -419,7 +421,7 @@ def edit_cause(filename, data):
             f"Error: el valor '{cause_id_str}' no es un número entero válido.")
         return
 
-    cause = look_up_problem_or_cause_by_id(cause_id, data)
+    cause = look_up_problem_or_cause_by_id(cause_id, data_copy)
 
     if cause is None:
         print(f"No existe causa con id {cause_id}.")
@@ -445,28 +447,33 @@ def edit_cause(filename, data):
         return
 
     if new_parent_id != cause["parent_id"]:
-        if look_up_problem_or_cause_by_id(new_parent_id, data) is None:
+        if look_up_problem_or_cause_by_id(new_parent_id, data_copy) is None:
             print(
                 f"{Back.RED}{Style.BRIGHT}No existe causa o problema con id {new_parent_id}.{Style.RESET_ALL}")
             return
 
-        # Validar que la causa no se conecte a una causa hija para evitar loops
         if look_up_problem_or_cause_by_id(new_parent_id, cause, search_from_cause=True) is not None:
             print(
                 f"{Back.RED}{Style.BRIGHT}Error: no se puede conectar una causa a una de sus causas hijas.{Style.RESET_ALL}")
             return
 
-        # Eliminar la causa del padre anterior
-        old_parent = look_up_problem_or_cause_by_id(cause["parent_id"], data)
+        old_parent = look_up_problem_or_cause_by_id(
+            cause["parent_id"], data_copy)
         old_parent["causes"] = [
             c for c in old_parent["causes"] if c["id"] != cause_id]
 
-        # Asignar la causa al nuevo padre
         cause["parent_id"] = new_parent_id
-        new_parent = look_up_problem_or_cause_by_id(new_parent_id, data)
+        new_parent = look_up_problem_or_cause_by_id(new_parent_id, data_copy)
         new_parent["causes"].append(cause)
 
-    save_data_to_file(data, filename)
+    confirm = prompt("¿Confirma la edición? (S/n): ").strip().lower()
+    if confirm == 's' or confirm == '':
+        data.clear()
+        data.update(data_copy)
+        save_data_to_file(data, filename)
+        print("Edición confirmada.")
+    else:
+        print("Edición descartada.")
 
 
 def edit_problem(filename, data):
